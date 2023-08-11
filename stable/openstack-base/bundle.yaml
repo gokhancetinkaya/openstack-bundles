@@ -7,17 +7,20 @@
 #       section of the [OpenStack Charms Deployment Guide](https://docs.openstack.org/project-deploy-guide/charm-deployment-guide/latest/)
 #       for more information.
 name: openstack-base
-series: focal
+series: jammy
 variables:
-  openstack-origin: &openstack-origin cloud:focal-yoga
-  data-port: &data-port to-be-set
-  osd-devices: &osd-devices /dev/sdb /dev/vdb
+  openstack-origin: &openstack-origin distro
+  data-port: &data-port br-ex:eth1
+  osd-devices: &osd-devices /dev/disk/by-dname/cephosd0
   expected-osd-count: &expected-osd-count 3
   expected-mon-count: &expected-mon-count 3
 machines:
   '0':
+    constraints: tags=foundation-nodes,openstack-1
   '1':
+    constraints: tags=foundation-nodes,openstack-2
   '2':
+    constraints: tags=foundation-nodes,openstack-3
 relations:
 - - nova-compute:amqp
   - rabbitmq-server:amqp
@@ -137,7 +140,59 @@ relations:
   - ceph-radosgw:certificates
 - - vault:certificates
   - mysql-innodb-cluster:certificates
+    #- - ceph-dashboard:dashboard
+    #  - ceph-mon:dashboard
+    #- - ceph-dashboard:certificates
+    #  - vault:certificates
+    #- - ceph-dashboard-loadbalancer:ha
+    #  - ceph-dashboard-loadbalancer-hacluster:ha
+    #- - ceph-dashboard:loadbalancer
+    #  - ceph-dashboard-loadbalancer:loadbalancer
+    #- - ceph-fs:ceph-mds
+    #  - ceph-mon:mds
+
 applications:
+
+        #  ceph-dashboard:
+        #    channel: quincy/stable
+        #    charm: ceph-dashboard
+        #    series: focal
+        #    bindings:
+        #      ? ''
+        #      : oam-space
+        #
+        #  ceph-dashboard-loadbalancer:
+        #    channel: jammy/stable
+        #    charm: openstack-loadbalancer
+        #    series: focal
+        #    bindings:
+        #      ? ''
+        #      : oam-space
+        #    num_units: 3
+        #    to:
+        #    - lxd:0
+        #    - lxd:1
+        #    - lxd:2
+        #
+        #  ceph-dashboard-loadbalancer-hacluster:
+        #    channel: 2.4/stable
+        #    charm: hacluster
+        #    bindings:
+        #      ? ''
+        #      : oam-space
+        #
+        #  ceph-fs:
+        #    charm: ch:ceph-fs
+        #    channel: quincy/stable
+        #    num_units: 3
+        #    to:
+        #    - lxd:0
+        #    - lxd:1
+        #    - lxd:2
+        #    bindings:
+        #      ? ''
+        #      : oam-space
+
   ceph-mon:
     annotations:
       gui-x: '790'
@@ -153,6 +208,9 @@ applications:
     - lxd:0
     - lxd:1
     - lxd:2
+    bindings:
+      ? ''
+      : oam-space
   ceph-osd:
     annotations:
       gui-x: '1065'
@@ -167,6 +225,9 @@ applications:
     - '0'
     - '1'
     - '2'
+    bindings:
+      ? ''
+      : oam-space
   ceph-radosgw:
     annotations:
       gui-x: '850'
@@ -178,84 +239,114 @@ applications:
       source: *openstack-origin
     to:
     - lxd:0
+    bindings:
+      ? ''
+      : oam-space
   cinder-mysql-router:
     annotations:
       gui-x: '900'
       gui-y: '1400'
     charm: ch:mysql-router
     channel: 8.0/stable
+    bindings:
+      ? ''
+      : oam-space
   cinder:
     annotations:
       gui-x: '980'
       gui-y: '1270'
     charm: ch:cinder
-    channel: yoga/stable
+    channel: zed/stable
     num_units: 1
     options:
       block-device: None
       glance-api-version: 2
       openstack-origin: *openstack-origin
     to:
-    - lxd:1
+    - 1
+    bindings:
+      ? ''
+      : oam-space
   cinder-ceph:
     annotations:
       gui-x: '1120'
       gui-y: '1400'
     charm: ch:cinder-ceph
-    channel: yoga/stable
+    channel: zed/stable
     num_units: 0
+    bindings:
+      ? ''
+      : oam-space
   glance-mysql-router:
     annotations:
       gui-x: '-290'
       gui-y: '1400'
     charm: ch:mysql-router
     channel: 8.0/stable
+    bindings:
+      ? ''
+      : oam-space
   glance:
     annotations:
       gui-x: '-230'
       gui-y: '1270'
     charm: ch:glance
-    channel: yoga/stable
+    channel: zed/stable
     num_units: 1
     options:
       openstack-origin: *openstack-origin
     to:
     - lxd:2
+    bindings:
+      ? ''
+      : oam-space
   keystone-mysql-router:
     annotations:
       gui-x: '230'
       gui-y: '1400'
     charm: ch:mysql-router
     channel: 8.0/stable
+    bindings:
+      ? ''
+      : oam-space
   keystone:
     annotations:
       gui-x: '300'
       gui-y: '1270'
     charm: ch:keystone
-    channel: yoga/stable
+    channel: zed/stable
     num_units: 1
     options:
       openstack-origin: *openstack-origin
     to:
     - lxd:0
+    bindings:
+      ? ''
+      : oam-space
   neutron-mysql-router:
     annotations:
       gui-x: '505'
       gui-y: '1385'
     charm: ch:mysql-router
     channel: 8.0/stable
+    bindings:
+      ? ''
+      : oam-space
   neutron-api-plugin-ovn:
     annotations:
       gui-x: '690'
       gui-y: '1385'
     charm: ch:neutron-api-plugin-ovn
-    channel: yoga/stable
+    channel: zed/stable
+    bindings:
+      ? ''
+      : oam-space
   neutron-api:
     annotations:
       gui-x: '580'
       gui-y: '1270'
     charm: ch:neutron-api
-    channel: yoga/stable
+    channel: zed/stable
     num_units: 1
     options:
       neutron-security-groups: true
@@ -263,47 +354,63 @@ applications:
       openstack-origin: *openstack-origin
     to:
     - lxd:1
+    bindings:
+      ? ''
+      : oam-space
   placement-mysql-router:
     annotations:
       gui-x: '1320'
       gui-y: '1385'
     charm: ch:mysql-router
     channel: 8.0/stable
+    bindings:
+      ? ''
+      : oam-space
   placement:
     annotations:
       gui-x: '1320'
       gui-y: '1270'
     charm: ch:placement
-    channel: yoga/stable
+    channel: zed/stable
     num_units: 1
     options:
       openstack-origin: *openstack-origin
     to:
     - lxd:2
+    bindings:
+      ? ''
+      : oam-space
   nova-mysql-router:
     annotations:
       gui-x: '-30'
       gui-y: '1385'
     charm: ch:mysql-router
     channel: 8.0/stable
+    bindings:
+      ? ''
+      : oam-space
   nova-cloud-controller:
     annotations:
       gui-x: '35'
       gui-y: '1270'
     charm: ch:nova-cloud-controller
-    channel: yoga/stable
+    channel: zed/stable
     num_units: 1
     options:
       network-manager: Neutron
       openstack-origin: *openstack-origin
+      console-access-protocol: novnc
     to:
     - lxd:0
+    bindings:
+      ? ''
+      : oam-space
   nova-compute:
     annotations:
       gui-x: '190'
       gui-y: '890'
     charm: ch:nova-compute
-    channel: yoga/stable
+    channel: zed/stable
     num_units: 3
     options:
       config-flags: default_ephemeral_format=ext4
@@ -315,29 +422,42 @@ applications:
     - '0'
     - '1'
     - '2'
+    bindings:
+      ? ''
+      : oam-space
   ntp:
     annotations:
       gui-x: '315'
       gui-y: '1030'
     charm: ch:ntp
+    channel: latest/stable
     num_units: 0
+    bindings:
+      ? ''
+      : oam-space
   dashboard-mysql-router:
     annotations:
       gui-x: '510'
       gui-y: '1030'
     charm: ch:mysql-router
     channel: 8.0/stable
+    bindings:
+      ? ''
+      : oam-space
   openstack-dashboard:
     annotations:
       gui-x: '585'
       gui-y: '900'
     charm: ch:openstack-dashboard
-    channel: yoga/stable
+    channel: zed/stable
     num_units: 1
     options:
       openstack-origin: *openstack-origin
     to:
     - lxd:1
+    bindings:
+      ? ''
+      : oam-space
   rabbitmq-server:
     annotations:
       gui-x: '300'
@@ -347,6 +467,9 @@ applications:
     num_units: 1
     to:
     - lxd:2
+    bindings:
+      ? ''
+      : oam-space
   mysql-innodb-cluster:
     annotations:
       gui-x: '535'
@@ -358,12 +481,15 @@ applications:
     - lxd:0
     - lxd:1
     - lxd:2
+    bindings:
+      ? ''
+      : oam-space
   ovn-central:
     annotations:
       gui-x: '70'
       gui-y: '1550'
     charm: ch:ovn-central
-    channel: 22.03/stable
+    channel: 22.09/stable
     num_units: 3
     options:
       source: *openstack-origin
@@ -371,30 +497,42 @@ applications:
     - lxd:0
     - lxd:1
     - lxd:2
+    bindings:
+      ? ''
+      : oam-space
   ovn-chassis:
     annotations:
       gui-x: '120'
       gui-y: '1030'
     charm: ch:ovn-chassis
-    channel: 22.03/stable
+    channel: 22.09/stable
     # Please update the `bridge-interface-mappings` to values suitable for the
     # hardware used in your deployment. See the referenced documentation at the
     # top of this file.
     options:
       ovn-bridge-mappings: physnet1:br-ex
       bridge-interface-mappings: *data-port
+    bindings:
+      ? ''
+      : oam-space
   vault-mysql-router:
     annotations:
       gui-x: '1535'
       gui-y: '1560'
     charm: ch:mysql-router
     channel: 8.0/stable
+    bindings:
+      ? ''
+      : oam-space
   vault:
     annotations:
       gui-x: '1610'
       gui-y: '1430'
     charm: ch:vault
-    channel: 1.7/stable
+    channel: 1.8/stable
     num_units: 1
     to:
     - lxd:0
+    bindings:
+      ? ''
+      : oam-space
