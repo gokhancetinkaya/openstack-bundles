@@ -263,7 +263,7 @@ applications:
       glance-api-version: 2
       openstack-origin: *openstack-origin
     to:
-    - 1
+    - 0
     bindings:
       ? ''
       : oam-space
