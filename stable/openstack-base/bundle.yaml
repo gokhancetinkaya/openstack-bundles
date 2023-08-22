@@ -140,7 +140,6 @@ relations:
   - ceph-radosgw:certificates
 - - vault:certificates
   - mysql-innodb-cluster:certificates
-
 applications:
   ceph-mon:
     annotations:
